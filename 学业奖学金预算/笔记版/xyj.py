@@ -3,13 +3,13 @@ from sqlalchemy import *
 
 
 class XueYeJiang:
-    def __init__(self, y1=9, y2=7, y3=5, y4=3, y5=1, b1=33960000, b2=50584000, b3=51824000):
+    def __init__(self, y1=9, y2=7, y3=5, y4=3, y5=1, b1=42008000, b2=51260000, b3=51260000):
         # 初始化数据库连接
         self.conn = create_engine(
-            'mysql+pymysql://yerdon:Qaz84759@sh-cynosdbmysql-grp-9v8niq3a.sql.tencentcdb.com:21749/hustzz')
+            'mysql+pymysql://wzq:Qaz84759@sh-cynosdbmysql-grp-gd8nicc0.sql.tencentcdb.com:28858/hustzz')
 
         # 初始化表格
-        self.writer = pd.ExcelWriter("学业奖结果927.xlsx")
+        self.writer = pd.ExcelWriter("学业奖结果0804.xlsx")
 
         # 1.主表
         self.data = self.init_df()  # 读学籍库,生成主表
@@ -18,7 +18,7 @@ class XueYeJiang:
 
         # 2.生成生源类型统计表
         self.data['NJ'] = self.data['NJ'].astype('str').apply(lambda x: x[:4])
-        self.sylxtj = self.data[self.data['TJNJ'].astype(float) >= 2020].pivot_table(values='XH', aggfunc=['count'], index=['DWBH', 'DWMC'], columns=['NJ', 'sylx'])
+        self.sylxtj = self.data[self.data['TJNJ'].astype(float) >= 2021].pivot_table(values='XH', aggfunc=['count'], index=['DWBH', 'DWMC'], columns=['NJ', 'sylx'])
         self.sylxtj.to_excel(self.writer, sheet_name='2.生源类型统计')
 
         # 3.生成分数、人数表
@@ -35,7 +35,7 @@ class XueYeJiang:
         self.modify_basis.to_excel(self.writer, sheet_name='5.调整基础')
 
         # 输入预算
-        self.budget = {'2020': b1, '2021': b2, '2022': b3}
+        self.budget = {'2021': b1, '2022': b2, '2023': b3}
 
         # 6.调整
         self.data = self.modify_basis.fillna(0)
@@ -51,14 +51,14 @@ class XueYeJiang:
         self.conn.dispose()
 
     def init_df(self):
-        stu_info = """ SELECT DWBH, DWMC, SXLBMC, LQLBMC, IF(NJ=2020, CONCAT(NJ,"(",XZ,"学制)"), NJ) AS NJ, NJ AS TJNJ, XZ, KSFS, XH, BKBYDW FROM GS WHERE XJZTMC IN ('正常', '联合培养') AND SXLBMC = '全日制硕士研究生' """
+        stu_info = """ SELECT DWBH, DWMC, SXLBMC, LQLBMC, IF(NJ=2021, CONCAT(NJ,"(",XZ,"学制)"), NJ) AS NJ, NJ AS TJNJ, XZ, KSFS, XH, BKBYDW FROM GS_lastest WHERE XJZTMC IN ('正常', '联合培养') AND SXLBMC = '全日制硕士研究生' """
 
-        zxjh = " SELECT 学号 XH , 专项计划代码, 专项计划名称 FROM zhuanxiangjihua "
+        zxjh = " SELECT 学号 XH, 专项计划代码, 专项计划名称 FROM zhuanxiangjihua "
         
         main_sheet = pd.merge(pd.read_sql(stu_info, self.conn), pd.read_sql(zxjh, self.conn), how='left', on='XH')
-        main_sheet = main_sheet[main_sheet['XZ'].astype(float) + main_sheet['TJNJ'].astype(float) > 2022]
+        main_sheet = main_sheet[main_sheet['XZ'].astype(float) + main_sheet['TJNJ'].astype(float) > 2023]
         
-        return main_sheet[(main_sheet['LQLBMC'] == '非定向') | (main_sheet['专项计划名称'] == '强军') | (main_sheet['专项计划名称'] == '少骨')]
+        return main_sheet[(main_sheet['LQLBMC'] == '非定向') | (main_sheet['专项计划名称'] == '强军计划') | (main_sheet['专项计划名称'] == '少数民族骨干计划')]
         
 
     def stu_qlt(self, y1, y2, y3, y4, y5):
@@ -81,7 +81,7 @@ class XueYeJiang:
         从分数人数表中获取学院年级得分，除以人数得出人均分数，用Z-Score公式计算
         """
         df = pd.DataFrame()
-        for grade in ['2020', '2021', '2022']:
+        for grade in ['2021', '2022', '2023']:
             df[grade + 'score'] = self.fsrs['sum'][grade] / self.fsrs['count'][
                 grade]  # 分数除以人数,因为是从self.fsrs里取出来的series，自身是带索引的，就是带学院之类的信息
             df[grade + 'score'] = df[grade + 'score'].apply(
@@ -91,11 +91,11 @@ class XueYeJiang:
 
     def modify_basis(self):
         df = pd.DataFrame()
-        for grade in ['2020', '2021', '2022']:
+        for grade in ['2021', '2022', '2023']:
             # 总人数
             df[grade + '总人数'] = self.fsrs['count'][grade]
             # 推免人数
-            if grade == '2022':
+            if grade == '2023':
                 df[grade + '推免人数'] = self.sylxtj['count'][grade]['211推免'] + self.sylxtj['count'][grade]['985推免'] + \
                                      self.sylxtj['count'][grade]['双非推免']
             else:
@@ -105,28 +105,28 @@ class XueYeJiang:
         return df
 
     def get_doc_budget(self):
-        sql = " SELECT DWBH, XH, NJ , LQLBMC, KSFS, XJZTMC FROM GS WHERE SXLBMC='全日制博士研究生' "
+        sql = " SELECT DWBH, XH, XZ, NJ , LQLBMC, KSFS, XJZTMC FROM GS_lastest WHERE SXLBMC='全日制博士研究生' "
         zxjh = " SELECT 学号 XH , 专项计划代码, 专项计划名称 FROM zhuanxiangjihua "
         merge = pd.merge(pd.read_sql(sql, self.conn), pd.read_sql(zxjh, self.conn), how='left', on='XH')
-        merge = merge[(merge['LQLBMC'] == '非定向') | (merge['专项计划名称'] == '少骨') | (merge['专项计划名称'] == '强军')]
+        merge = merge[(merge['LQLBMC'] == '非定向') | (merge['专项计划名称'] == '少数民族骨干计划') | (merge['专项计划名称'] == '强军计划')]
 
         doct = pd.DataFrame(index=merge['DWBH'].drop_duplicates())
-        doct['2017直博招生'] = merge[(merge['NJ'] == '2017') & (merge['KSFS'] == '本科直博')].pivot_table(values='XH', aggfunc='count', index='DWBH')
-        doct['2017级直博生优博名额'] = doct['2017直博招生'] * 0.3
-        doct['2017直博生在籍'] = merge[(merge['NJ'] == '2017') & (merge['KSFS'] == '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
+        doct['2018直博生优博'] = merge[(merge['NJ'] == '2018') &(merge['XZ'] == '5') & (merge['KSFS'] == '本科直博')].pivot_table(values='XH', aggfunc='count', index='DWBH')
+        #doct['2018级直博生优博名额'] = doct['2018直博招生'] 
+        #doct['2018直博生在籍'] = merge[(merge['NJ'] == '2018') & (merge['KSFS'] == '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
 
-        doct['2018直博生在籍'] = merge[(merge['NJ'] == '2018') & (merge['KSFS'] == '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
-        doct['2018非直博生在籍'] = merge[(merge['NJ'] == '2018') & (merge['KSFS'] != '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
+        doct['2019博士学业奖'] = merge[(merge['NJ'] == '2019') & (merge['XZ'] == '5') & (merge['KSFS'] == '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
+        doct['2019优博'] = merge[(merge['NJ'] == '2019') & (merge['XZ'] == '3') & (merge['KSFS'] != '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
 
-        doct['2019非直博招生'] = merge[(merge['NJ'] == '2019') & (merge['KSFS'] != '本科直博')].pivot_table(values='XH', aggfunc='count', index='DWBH')
-        doct['2019非直博生优博名额'] = doct['2019非直博招生'] * 0.3
-        doct['2019直博生在籍'] = merge[(merge['NJ'] == '2019') & (merge['KSFS'] == '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
-        doct['2019非直博生在籍'] = merge[(merge['NJ'] == '2019') & (merge['KSFS'] != '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
+        doct['2020博士学业奖'] = merge[(merge['NJ'] == '2020') &((merge['XZ'] == '5') | (merge['XZ'] == '4')) & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
+        #doct['2020非直博生优博名额'] = doct['2020非直博招生'] * 0.3
+        #doct['2020直博生在籍'] = merge[(merge['NJ'] == '2020') & (merge['KSFS'] == '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
+        doct['2020优博'] = merge[(merge['NJ'] == '2020') & (merge['XZ'] == '3') & (merge['KSFS'] != '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
 
-        doctt = merge[(merge['NJ'] >= '2020') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH', columns='NJ')
-        doct['2020在籍'] = doctt['2020']
+        doctt = merge[(merge['NJ'] >= '2021') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH', columns='NJ')
         doct['2021在籍'] = doctt['2021']
         doct['2022在籍'] = doctt['2022']
+        doct['2023在籍'] = doctt['2023']
 
         return doct
 
@@ -180,7 +180,7 @@ class Modify:
     @staticmethod
     def modify(data, budget):
         df = pd.DataFrame()
-        for grade in ['2020', '2021', '2022']:
+        for grade in ['2021', '2022', '2023']:
             rate = data[grade + '初步金额'].sum() / float(budget[grade])  # 用当年的学院总初步金额除以预算，乘回金额
             df[grade + '预算'] = data[grade + '初步金额'].astype('float') / rate
             df[grade + '总人数'] = data[grade + '总人数']
