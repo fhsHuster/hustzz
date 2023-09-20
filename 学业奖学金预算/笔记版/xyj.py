@@ -3,13 +3,13 @@ from sqlalchemy import *
 
 
 class XueYeJiang:
-    def __init__(self, y1=9, y2=7, y3=5, y4=3, y5=1, b1=42008000, b2=51260000, b3=51260000):
+    def __init__(self, y1=9, y2=7, y3=5, y4=3, y5=1, b1=42008000, b2=51560000, b3=51560000):
         # 初始化数据库连接
         self.conn = create_engine(
             'mysql+pymysql://wzq:Qaz84759@sh-cynosdbmysql-grp-gd8nicc0.sql.tencentcdb.com:28858/hustzz')
 
         # 初始化表格
-        self.writer = pd.ExcelWriter("学业奖结果0804.xlsx")
+        self.writer = pd.ExcelWriter("学业奖结果0920.xlsx")
 
         # 1.主表
         self.data = self.init_df()  # 读学籍库,生成主表
@@ -51,14 +51,18 @@ class XueYeJiang:
         self.conn.dispose()
 
     def init_df(self):
-        stu_info = """ SELECT DWBH, DWMC, SXLBMC, LQLBMC, IF(NJ=2021, CONCAT(NJ,"(",XZ,"学制)"), NJ) AS NJ, NJ AS TJNJ, XZ, KSFS, XH, BKBYDW FROM GS_lastest WHERE XJZTMC IN ('正常', '联合培养') AND SXLBMC = '全日制硕士研究生' """
+        stu_info = """ SELECT DWBH, DWMC, SXLBMC, LQLBMC, IF(NJ=2021, CONCAT(NJ,"(",XZ,"学制)"), NJ) AS NJ, NJ AS TJNJ, XZ, KSFS, XH, BKBYDW FROM GS_lastestest WHERE XJZTMC IN ('正常', '联合培养') AND GRADE = 'Y' AND SXLBMC = '全日制硕士研究生' """
 
         zxjh = " SELECT 学号 XH, 专项计划代码, 专项计划名称 FROM zhuanxiangjihua "
         
         main_sheet = pd.merge(pd.read_sql(stu_info, self.conn), pd.read_sql(zxjh, self.conn), how='left', on='XH')
         main_sheet = main_sheet[main_sheet['XZ'].astype(float) + main_sheet['TJNJ'].astype(float) > 2023]
         
-        return main_sheet[(main_sheet['LQLBMC'] == '非定向') | (main_sheet['专项计划名称'] == '强军计划') | (main_sheet['专项计划名称'] == '少数民族骨干计划')]
+        # return main_sheet[(main_sheet['LQLBMC'] == '非定向') | (main_sheet['专项计划名称'] == '强军计划') | (main_sheet['专项计划名称'] == '少数民族骨干计划')]
+        return main_sheet[(main_sheet['LQLBMC'] == '非定向') | ((main_sheet['LQLBMC'] == '定向') & ((main_sheet['专项计划名称'] == '强军计划') | (main_sheet['专项计划名称'] == '少数民族骨干计划')))]
+        return main_sheet[(main_sheet['LQLBMC'] == '非定向') | ((main_sheet['LQLBMC'] == '定向') & ((main_sheet['专项计划名称'] == '强军计划') | (main_sheet['专项计划名称'] == '少数民族骨干计划')))]
+
+
         
 
     def stu_qlt(self, y1, y2, y3, y4, y5):
@@ -105,7 +109,7 @@ class XueYeJiang:
         return df
 
     def get_doc_budget(self):
-        sql = " SELECT DWBH, XH, XZ, NJ , LQLBMC, KSFS, XJZTMC FROM GS_lastest WHERE SXLBMC='全日制博士研究生' "
+        sql = " SELECT DWBH, XH, XZ, NJ , LQLBMC, KSFS, XJZTMC FROM GS_lastestest WHERE SXLBMC='全日制博士研究生' AND GRADE = 'Y' "
         zxjh = " SELECT 学号 XH , 专项计划代码, 专项计划名称 FROM zhuanxiangjihua "
         merge = pd.merge(pd.read_sql(sql, self.conn), pd.read_sql(zxjh, self.conn), how='left', on='XH')
         merge = merge[(merge['LQLBMC'] == '非定向') | (merge['专项计划名称'] == '少数民族骨干计划') | (merge['专项计划名称'] == '强军计划')]
