@@ -9,7 +9,9 @@ class XueYeJiang:
             'mysql+pymysql://wzq:Qaz84759@sh-cynosdbmysql-grp-gd8nicc0.sql.tencentcdb.com:28858/hustzz')
 
         # 初始化表格
-        self.writer = pd.ExcelWriter("学业奖结果0920.xlsx")
+        self.writer = pd.ExcelWriter("学业奖结果0926.xlsx")
+        
+
 
         # 1.主表
         self.data = self.init_df()  # 读学籍库,生成主表
@@ -48,6 +50,7 @@ class XueYeJiang:
 
         # 保存，关闭数据库连接
         self.writer.save()
+        self.writer.close()
         self.conn.dispose()
 
     def init_df(self):
@@ -115,12 +118,12 @@ class XueYeJiang:
         merge = merge[(merge['LQLBMC'] == '非定向') | (merge['专项计划名称'] == '少数民族骨干计划') | (merge['专项计划名称'] == '强军计划')]
 
         doct = pd.DataFrame(index=merge['DWBH'].drop_duplicates())
-        doct['2018直博生优博'] = merge[(merge['NJ'] == '2018') &(merge['XZ'] == '5') & (merge['KSFS'] == '本科直博')].pivot_table(values='XH', aggfunc='count', index='DWBH')
+        doct['2018直博生优博'] = merge[(merge['NJ'] == '2018') &(merge['XZ'] == '5') & (merge['KSFS'] == '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
         #doct['2018级直博生优博名额'] = doct['2018直博招生'] 
         #doct['2018直博生在籍'] = merge[(merge['NJ'] == '2018') & (merge['KSFS'] == '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
 
         doct['2019博士学业奖'] = merge[(merge['NJ'] == '2019') & (merge['XZ'] == '5') & (merge['KSFS'] == '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
-        doct['2019优博'] = merge[(merge['NJ'] == '2019') & (merge['XZ'] == '3') & (merge['KSFS'] != '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
+        doct['2019优博'] = merge[(merge['NJ'] == '2019') & ((merge['XZ'] == '3') | (merge['XZ'] == '4')) & (merge['KSFS'] != '本科直博') & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
 
         doct['2020博士学业奖'] = merge[(merge['NJ'] == '2020') &((merge['XZ'] == '5') | (merge['XZ'] == '4')) & ((merge['XJZTMC'] == '正常') | (merge['XJZTMC'] == '联合培养'))].pivot_table(values='XH', aggfunc='count', index='DWBH')
         #doct['2020非直博生优博名额'] = doct['2020非直博招生'] * 0.3
