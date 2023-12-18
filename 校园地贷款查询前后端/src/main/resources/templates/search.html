@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+</head>
+
+<head>
+    <title>学生余额查询</title>
+    <!-- 省略其他代码 -->
+</head>
+<body>
+<h1>学生余额查询</h1>
+<form th:action="@{/students/loan}" method="get"> <!-- 添加了 id 属性 -->
+    <label for="xueHaoInput">输入学号:</label>
+    <input type="text" id="xueHaoInput" name="xueHao">
+    <button type="submit">查询余额</button>
+</form>
+<p id="balanceResult">
+    <!-- 根据 'error' 的值展示不同的信息 -->
+    <span th:if="${error != null && error == 1}">未找到该学生,请联系研究生资助中心或在公众号平台后台留言</span>
+    <span th:if="${error == null || error != 1}">
+            <!-- 在这里添加 Thymeleaf 的逻辑，展示 'loan' 值 -->
+            <span th:utext="'学号: ' + ${info.xueHao}"></span>
+            <span th:utext="'学院: ' + ${info.xueYuan}"></span>
+            <span th:utext="'贷款发放金额: ' + ${info.loanDisbursement}"></span>
+            <span th:utext="'扣费金额: ' + ${info.deductionAmount}"></span>
+            <span th:utext="'退款金额: ' + ${info.refundAmount}"></span>
+            <span th:utext="'退款账户: ' + ${info.refundAccount}"></span>
+        </span>
+</p>
+
+</body>
+</html>

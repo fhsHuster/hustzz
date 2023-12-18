@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>学生余额查询</title>
+    <!-- CSS 样式 -->
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            text-align: center;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        .table-container {
+            width: 100%;
+            margin: 0 auto;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+<h1>学生余额查询</h1>
+<form th:action="@{/students/loan}" method="get">
+    <label for="xueHaoInput">输入学号:</label>
+    <input type="text" id="xueHaoInput" name="xueHao">
+    <button type="submit">查询余额</button>
+</form>
+
+<div th:if="${error != null && error == 1}">
+    <p>未找到该学生，请联系研究生资助中心或在公众号平台后台留言</p>
+</div>
+<div th:if="${error == null || error != 1}">
+    <div class="table-container">
+        <table th:if="${info != null}">
+            <thead>
+            <tr>
+                <th>学号</th>
+                <th>学院</th>
+                <th>贷款发放金额</th>
+                <th>扣费金额</th>
+                <th>退款金额</th>
+                <th>退款账户</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td th:text="${info.xueHao}"></td>
+                <td th:text="${info.xueYuan}"></td>
+                <td th:text="${info.loanDisbursement}"></td>
+                <td th:text="${info.deductionAmount}"></td>
+                <td th:text="${info.refundAmount}"></td>
+                <td th:text="${info.refundAccount}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

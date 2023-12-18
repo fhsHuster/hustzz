@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nowcoder.community.dao.LoanInfoMapper">
+
+    <sql id="selectFields">
+        xue_hao,xue_yuan,loan_disbursement,deduction_amount,refund_amount,refund_account
+    </sql>
+
+    <select id="selectByxueHao" resultType="LoanInfo">
+        select <include refid="selectFields"></include>
+        from loan
+        where xue_hao = #{xueHao}
+    </select>
+
+</mapper>
