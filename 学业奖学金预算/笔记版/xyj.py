@@ -63,7 +63,7 @@ class XueYeJiang:
         
         # return main_sheet[(main_sheet['LQLBMC'] == '非定向') | (main_sheet['专项计划名称'] == '强军计划') | (main_sheet['专项计划名称'] == '少数民族骨干计划')]
         return main_sheet[(main_sheet['LQLBMC'] == '非定向') | ((main_sheet['LQLBMC'] == '定向') & ((main_sheet['专项计划名称'] == '强军计划') | (main_sheet['专项计划名称'] == '少数民族骨干计划')))]
-        return main_sheet[(main_sheet['LQLBMC'] == '非定向') | ((main_sheet['LQLBMC'] == '定向') & ((main_sheet['专项计划名称'] == '强军计划') | (main_sheet['专项计划名称'] == '少数民族骨干计划')))]
+        # return main_sheet[(main_sheet['LQLBMC'] == '非定向') | ((main_sheet['LQLBMC'] == '定向') & ((main_sheet['专项计划名称'] == '强军计划') | (main_sheet['专项计划名称'] == '少数民族骨干计划')))]
 
 
         
